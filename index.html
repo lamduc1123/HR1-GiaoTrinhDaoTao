@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<!-- HR1Vietnam Holdings - Cloud Synced & Multi-Role Curriculum System -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GIÁO ÁN CA 1 HR1VIETNAM HOLDINGS — CLOUD SYNC & PHÂN QUYỀN</title>
+<link rel="stylesheet" href="css/style.css">
+<!-- Firebase App, Auth, Firestore & Realtime Database SDK (v10 compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand-group">
+          <div class="course-name">
+            <strong>GIÁO ÁN CA 1 HR1VIETNAM HOLDINGS</strong>
+          </div>
+          <!-- Đèn báo trạng thái kết nối Cloud / Firebase -->
+          <button class="cloud-status-badge local" id="cloudStatusBadge" type="button" title="Bấm để thiết lập cấu hình Firebase">
+            🟡 Chế độ Cục bộ (Local)
+          </button>
+        </div>
+
+        <!-- Bộ chuyển đổi giảng viên (Tabs) -->
+        <div class="speaker-switch" id="speakerSwitch" role="tablist" aria-label="Chọn giảng viên"></div>
+
+        <div class="actions">
+          <!-- Huy hiệu vai trò người dùng hiện tại -->
+          <button class="icon-btn user-profile-btn" id="userProfileBtn" type="button" title="Đổi vai trò / Đăng nhập">
+            <span id="userRoleBadge">🎓 Học viên (Chỉ xem)</span>
+          </button>
+
+          <!-- Nút xem lịch sử phiên bản -->
+          <button class="icon-btn version-btn" id="versionHistoryBtn" type="button" title="Xem lịch sử phiên bản">
+            🕒 Lịch sử
+          </button>
+
+          <!-- Nút bật chế độ chỉnh sửa (tự động ẩn/hiện hoặc khóa tùy quyền) -->
+          <button class="icon-btn edit-action-btn" id="editBtn" type="button">Chỉnh sửa</button>
+
+          <!-- Nút In / Xuất PDF -->
+          <button class="icon-btn print-btn" onclick="window.print()" type="button">In / PDF</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-card">
+        <div class="hero-grid">
+          <div>
+            <h2>TÀI LIỆU GIẢNG DẠY TUYỂN DỤNG THỰC TẾ TẠI DOANH NGHIỆP</h2>
+            <p class="hero-subtext">Hệ thống giáo án thời gian thực — Tự động đồng bộ đa thiết bị &amp; Phân quyền giảng viên độc lập</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content" id="content"></section>
+  </main>
+</div>
+
+<!-- Modal 1: Phóng to ảnh slide -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <button id="closeLightbox" aria-label="Đóng">×</button>
+  <img id="lightboxImg" alt="Ảnh slide phóng to">
+</div>
+
+<!-- Modal 2: Đăng nhập & Đổi vai trò (Auth Switcher) -->
+<div class="modal-overlay" id="authModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🔑 Đăng nhập / Chuyển đổi vai trò</h3>
+      <button class="modal-close" id="closeAuthModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">Chọn vai trò của bạn để nhận quyền chỉnh sửa tương ứng:</p>
+      
+      <div class="account-select-grid">
+        <div class="acc-card">
+          <div class="acc-icon">👑</div>
+          <div class="acc-info">
+            <strong>Quản Trị Viên (Admin)</strong>
+            <span>Toàn quyền chỉnh sửa mọi giảng viên, cấu trúc slide &amp; rollback</span>
+          </div>
+          <button class="acc-btn admin" data-login-preset="admin">Chọn Admin</button>
+        </div>
+
+        <div class="acc-card">
+          <div class="acc-icon">👩‍💼</div>
+          <div class="acc-info">
+            <strong>Giảng viên Hải Hà</strong>
+            <span>Chỉ được chỉnh sửa giáo án trong tab Hải Hà</span>
+          </div>
+          <button class="acc-btn speaker" data-login-preset="haiha">Chọn Hải Hà</button>
+        </div>
+
+        <div class="acc-card">
+          <div class="acc-info">
+            <div class="acc-icon">👩‍🏫</div>
+            <strong>Giảng viên Quỳnh Mai</strong>
+            <span>Chỉ được chỉnh sửa giáo án trong tab Quỳnh Mai</span>
+          </div>
+          <button class="acc-btn speaker" data-login-preset="quynhmai">Chọn Quỳnh Mai</button>
+        </div>
+
+        <div class="acc-card">
+          <div class="acc-icon">👩‍💻</div>
+          <div class="acc-info">
+            <strong>Giảng viên Mai Anh</strong>
+            <span>Chỉ được chỉnh sửa giáo án trong tab Mai Anh</span>
+          </div>
+          <button class="acc-btn speaker" data-login-preset="maianh">Chọn Mai Anh</button>
+        </div>
+
+        <div class="acc-card">
+          <div class="acc-icon">🎓</div>
+          <div class="acc-info">
+            <strong>Học Viên / Khách Xem</strong>
+            <span>Chế độ chỉ đọc, tự động nhận cập nhật bản mới nhất</span>
+          </div>
+          <button class="acc-btn viewer" data-login-preset="viewer">Chỉ Xem</button>
+        </div>
+      </div>
+
+      <div class="pin-section">
+        <label for="pinInput">Mã PIN xác thực (nếu tài khoản có cài đặt):</label>
+        <input type="password" id="pinInput" placeholder="Nhập PIN (Admin: 1234, GV: 1111 / 2222 / 3333)" autocomplete="off">
+        <small class="pin-hint">💡 Mặc định: Admin là <code>1234</code>, Hải Hà: <code>1111</code>, Quỳnh Mai: <code>2222</code>, Mai Anh: <code>3333</code>, Khách: bỏ trống.</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3: Lịch sử phiên bản (Version History) -->
+<div class="modal-overlay" id="versionModal" aria-hidden="true">
+  <div class="modal-box modal-large">
+    <div class="modal-header">
+      <h3>🕒 Lịch sử Phiên bản Giáo án</h3>
+      <button class="modal-close" id="closeVersionModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">Ghi nhận mốc thời gian, người chỉnh sửa và nội dung thay đổi. Tự động đồng bộ với Firebase Firestore.</p>
+      <div class="version-list" id="versionList">
+        <!-- Render động từ js/version-history.js -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 4: Cài đặt kết nối Firebase Firestore -->
+<div class="modal-overlay" id="firebaseModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>⚡ Cấu hình Firebase Cloud Sync</h3>
+      <button class="modal-close" id="closeFirebaseModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">Dán đoạn mã cấu hình Firebase (Firebase Config JSON) từ Firebase Console của bạn để kích hoạt đồng bộ thời gian thực đa thiết bị:</p>
+      
+      <div class="form-group">
+        <label for="firebaseConfigJson">Firebase Config (JSON format):</label>
+        <textarea id="firebaseConfigJson" rows="8" placeholder='{
+  "apiKey": "AIzaSyCCVzWKGak26axAkWhyXsn7zt2ggxSkGUg",
+  "authDomain": "hr1-legal-portal.firebaseapp.com",
+  "projectId": "hr1-legal-portal",
+  "storageBucket": "hr1-legal-portal.firebasestorage.app",
+  "messagingSenderId": "1079991627887",
+  "appId": "1:1079991627887:web:0317ef1e61c3cc08579d9a"
+}'></textarea>
+      </div>
+
+      <div class="config-instructions">
+        <strong>📌 Hướng dẫn nhanh:</strong>
+        <ol>
+          <li>Truy cập <a href="https://console.firebase.google.com" target="_blank" rel="noopener">Firebase Console</a> &gt; Tạo dự án mới (miễn phí).</li>
+          <li>Bật dịch vụ <b>Firestore Database</b> (chế độ Test Mode hoặc Production).</li>
+          <li>Vào <b>Project Settings &gt; General</b>, chọn biểu tượng Web <b>(&lt;/&gt;)</b> để lấy <code>firebaseConfig</code> rồi dán vào đây.</li>
+        </ol>
+      </div>
+
+      <div class="modal-footer">
+        <button class="primary-btn" id="saveFirebaseConfigBtn" type="button">Lưu &amp; Kết nối Đám mây</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tải các module Javascript có thứ tự rõ ràng -->
+<script src="js/data-default.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/db.js"></script>
+<script src="js/version-history.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
